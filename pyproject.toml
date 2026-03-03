@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentpatch"
+version = "0.1.0"
+description = "Python SDK and CLI for the AgentPatch tool marketplace"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "AgentPatch", email = "hello@agentpatch.ai" },
+]
+keywords = ["agentpatch", "ai", "tools", "marketplace", "agent"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "httpx>=0.27,<1",
+    "click>=8.0,<9",
+    "rich>=13.0,<14",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-httpx>=0.34",
+    "ruff>=0.5",
+]
+
+[project.scripts]
+ap = "agentpatch.cli:cli"
+
+[project.urls]
+Homepage = "https://agentpatch.ai"
+Documentation = "https://agentpatch.ai/docs/consumer"
+Repository = "https://github.com/fullthom/agentpatch-python"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
