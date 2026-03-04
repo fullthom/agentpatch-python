@@ -78,6 +78,7 @@ def clear_config() -> None:
 # HTTP helper
 # ---------------------------------------------------------------------------
 
+
 def _request(
     method: str,
     url: str,
@@ -303,6 +304,7 @@ def _error(message: str) -> None:
 # CLI subcommands
 # ---------------------------------------------------------------------------
 
+
 def _cmd_search(args: argparse.Namespace) -> None:
     """Handle 'search' subcommand."""
     client = AgentPatch(api_key=args.api_key, base_url=args.base_url)
@@ -331,12 +333,14 @@ def _cmd_search(args: argparse.Namespace) -> None:
         rate = t.get("success_rate")
         rate_str = f"{rate:.0%}" if rate is not None else "-"
         owner = t.get("owner_username", "")
-        rows.append([
-            f"{owner}/{t['slug']}",
-            t.get("description", "")[:50],
-            f"{price} cr",
-            rate_str,
-        ])
+        rows.append(
+            [
+                f"{owner}/{t['slug']}",
+                t.get("description", "")[:50],
+                f"{price} cr",
+                rate_str,
+            ]
+        )
 
     _print_table(
         ["Tool", "Description", "Price", "Success"],
@@ -487,6 +491,7 @@ def _cmd_config_clear(args: argparse.Namespace) -> None:
 # CLI entry point
 # ---------------------------------------------------------------------------
 
+
 def _detect_prog() -> str:
     """Detect whether the user invoked 'agentpatch' or 'ap'."""
     if sys.argv and sys.argv[0]:
@@ -509,7 +514,7 @@ def main(argv: list[str] | None = None) -> None:
             "One API key, no extra accounts needed.\n\n"
             "Get started:  pip install agentpatch\n"
             f"              {prog} config set-key\n"
-            f"              {prog} search \"web search\"\n\n"
+            f'              {prog} search "web search"\n\n'
             "Sign up for free at https://agentpatch.ai (10,000 credits included)."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
