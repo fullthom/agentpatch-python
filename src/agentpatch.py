@@ -227,8 +227,8 @@ class AgentPatch:
         """Raise if no API key is configured."""
         if not self._api_key:
             raise AgentPatchError(
-                "No API key configured. Set AGENTPATCH_API_KEY env var, "
-                "run 'agentpatch config set-key', or pass api_key= to AgentPatch()."
+                "No API key configured. Set AGENTPATCH_API_KEY env var "
+                "or run 'ap config set-key <key>'. Get a key at https://agentpatch.ai"
             )
 
     def close(self) -> None:
@@ -380,8 +380,15 @@ def _cmd_info(args: argparse.Namespace) -> None:
 
 def _cmd_run(args: argparse.Namespace) -> None:
     """Handle 'run' subcommand."""
+    raw = args.input
+    if raw.startswith("@"):
+        filepath = raw[1:]
+        try:
+            raw = Path(filepath).read_text()
+        except OSError as e:
+            _error(f"Cannot read input file '{filepath}': {e}")
     try:
-        tool_input = json.loads(args.input)
+        tool_input = json.loads(raw)
     except json.JSONDecodeError as e:
         _error(f"Invalid JSON input: {e}")
 
@@ -464,10 +471,8 @@ def _cmd_job(args: argparse.Namespace) -> None:
 
 def _cmd_config_set_key(args: argparse.Namespace) -> None:
     """Handle 'config set-key' subcommand."""
-    api_key = input("Enter your AgentPatch API key: ")
-    path = save_api_key(api_key)
+    path = save_api_key(args.key)
     print(f"API key saved to {path}")
-    print("Get your key at: https://agentpatch.ai/dashboard")
 
 
 def _cmd_config_show(args: argparse.Namespace) -> None:
@@ -544,7 +549,7 @@ def main(argv: list[str] | None = None) -> None:
     p_run = subparsers.add_parser("run", help="Invoke a tool and get results.")
     p_run.add_argument("username", help="Tool owner's username.")
     p_run.add_argument("slug", help="Tool slug.")
-    p_run.add_argument("--input", required=True, help="Tool input as a JSON string.")
+    p_run.add_argument("--input", required=True, help="Tool input as JSON string, or @path/to/file.json.")
     p_run.add_argument("--no-poll", action="store_true", help="Return immediately without waiting for async results.")
     p_run.add_argument("--timeout", type=int, default=None, help="Server-side timeout in seconds (1-3600).")
     p_run.add_argument("--json", action="store_true", help="Output raw JSON.")
@@ -562,6 +567,7 @@ def main(argv: list[str] | None = None) -> None:
     config_sub = p_config.add_subparsers(dest="config_command")
 
     p_set_key = config_sub.add_parser("set-key", help="Save your API key.")
+    p_set_key.add_argument("key", help="Your AgentPatch API key (get one at https://agentpatch.ai).")
     p_set_key.set_defaults(func=_cmd_config_set_key)
 
     p_show = config_sub.add_parser("show", help="Show current configuration.")
