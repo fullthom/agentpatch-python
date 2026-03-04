@@ -272,9 +272,8 @@ class TestCLIConfig:
         config_file = tmp_path / "config.toml"
         monkeypatch.setattr("agentpatch.CONFIG_FILE", config_file)
         monkeypatch.setattr("agentpatch.CONFIG_DIR", tmp_path)
-        monkeypatch.setattr("builtins.input", lambda _: "my_secret_key")
 
-        output, code = _run_cli(["config", "set-key"])
+        output, code = _run_cli(["config", "set-key", "my_secret_key"])
         assert code == 0
         assert "saved" in output
         assert config_file.read_text().strip() == 'api_key = "my_secret_key"'
