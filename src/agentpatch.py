@@ -227,7 +227,7 @@ class AgentPatch:
         if not self._api_key:
             raise AgentPatchError(
                 "No API key configured. Set AGENTPATCH_API_KEY env var, "
-                "run 'ap config set-key', or pass api_key= to AgentPatch()."
+                "run 'agentpatch config set-key', or pass api_key= to AgentPatch()."
             )
 
     def close(self) -> None:
@@ -411,7 +411,7 @@ def _cmd_run(args: argparse.Namespace) -> None:
             print(json.dumps(output, indent=2, default=str))
     elif status == "pending":
         print(f"{_yellow('Job started:')} {result.get('job_id')}")
-        print(f"Poll with: ap job {result.get('job_id')}")
+        print(f"Poll with: agentpatch job {result.get('job_id')}")
     elif status == "failed":
         print(f"{_red('Failed:')} {result.get('error', 'Unknown error')}")
     else:
@@ -487,9 +487,33 @@ def _cmd_config_clear(args: argparse.Namespace) -> None:
 # CLI entry point
 # ---------------------------------------------------------------------------
 
+def _detect_prog() -> str:
+    """Detect whether the user invoked 'agentpatch' or 'ap'."""
+    if sys.argv and sys.argv[0]:
+        name = Path(sys.argv[0]).name
+        if name.startswith("agentpatch"):
+            return "agentpatch"
+    return "ap"
+
+
 def main(argv: list[str] | None = None) -> None:
     """CLI entry point. Pass argv for testing, or None to use sys.argv."""
-    parser = argparse.ArgumentParser(prog="ap", description="AgentPatch — discover and use AI tools from the CLI.")
+    prog = _detect_prog()
+
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        description=(
+            "AgentPatch — a tool marketplace for AI agents.\n\n"
+            "Search and invoke 25+ tools (web search, image generation, email,\n"
+            "Google Maps, YouTube transcripts, and more) from the command line.\n"
+            "One API key, no extra accounts needed.\n\n"
+            "Get started:  pip install agentpatch\n"
+            f"              {prog} config set-key\n"
+            f"              {prog} search \"web search\"\n\n"
+            "Sign up for free at https://agentpatch.ai (10,000 credits included)."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--api-key", default=os.environ.get("AGENTPATCH_API_KEY"), help="API key (overrides config).")
     parser.add_argument("--base-url", default="https://agentpatch.ai", help="API base URL.")
 
@@ -497,34 +521,34 @@ def main(argv: list[str] | None = None) -> None:
 
     # search
     p_search = subparsers.add_parser("search", help="Search for tools in the marketplace.")
-    p_search.add_argument("query", nargs="?", default=None)
+    p_search.add_argument("query", nargs="?", default=None, help="Search query (omit to browse all tools).")
     p_search.add_argument("--limit", type=int, default=20, help="Max results (1-100).")
-    p_search.add_argument("--max-price", type=int, default=None, help="Max price in credits.")
-    p_search.add_argument("--min-rate", type=float, default=None, help="Min success rate (0-1).")
+    p_search.add_argument("--max-price", type=int, default=None, help="Max price in credits per call.")
+    p_search.add_argument("--min-rate", type=float, default=None, help="Min success rate (0.0-1.0).")
     p_search.add_argument("--json", action="store_true", help="Output raw JSON.")
     p_search.set_defaults(func=_cmd_search)
 
     # info
-    p_info = subparsers.add_parser("info", help="Get details about a specific tool.")
-    p_info.add_argument("username")
-    p_info.add_argument("slug")
+    p_info = subparsers.add_parser("info", help="Get details about a specific tool (schema, pricing, stats).")
+    p_info.add_argument("username", help="Tool owner's username.")
+    p_info.add_argument("slug", help="Tool slug.")
     p_info.add_argument("--json", action="store_true", help="Output raw JSON.")
     p_info.set_defaults(func=_cmd_info)
 
     # run
-    p_run = subparsers.add_parser("run", help="Invoke a tool with input data.")
-    p_run.add_argument("username")
-    p_run.add_argument("slug")
-    p_run.add_argument("--input", required=True, help="Tool input as JSON string.")
-    p_run.add_argument("--no-poll", action="store_true", help="Don't wait for async results.")
-    p_run.add_argument("--timeout", type=int, default=None, help="Server-side timeout (1-3600s).")
+    p_run = subparsers.add_parser("run", help="Invoke a tool and get results.")
+    p_run.add_argument("username", help="Tool owner's username.")
+    p_run.add_argument("slug", help="Tool slug.")
+    p_run.add_argument("--input", required=True, help="Tool input as a JSON string.")
+    p_run.add_argument("--no-poll", action="store_true", help="Return immediately without waiting for async results.")
+    p_run.add_argument("--timeout", type=int, default=None, help="Server-side timeout in seconds (1-3600).")
     p_run.add_argument("--json", action="store_true", help="Output raw JSON.")
     p_run.set_defaults(func=_cmd_run)
 
     # job
     p_job = subparsers.add_parser("job", help="Check the status of an async job.")
-    p_job.add_argument("job_id")
-    p_job.add_argument("--poll", action="store_true", help="Poll until job completes.")
+    p_job.add_argument("job_id", help="Job ID returned by a previous invocation.")
+    p_job.add_argument("--poll", action="store_true", help="Poll until the job completes.")
     p_job.add_argument("--json", action="store_true", help="Output raw JSON.")
     p_job.set_defaults(func=_cmd_job)
 
