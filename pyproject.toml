@@ -23,26 +23,24 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-dependencies = [
-    "httpx>=0.27,<1",
-    "click>=8.0,<9",
-    "rich>=13.0,<14",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
-    "pytest-httpx>=0.34",
     "ruff>=0.5",
 ]
 
 [project.scripts]
-ap = "agentpatch.cli:cli"
+ap = "agentpatch:main"
 
 [project.urls]
 Homepage = "https://agentpatch.ai"
 Documentation = "https://agentpatch.ai/docs/consumer"
 Repository = "https://github.com/fullthom/agentpatch-python"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentpatch.py"]
 
 [tool.ruff]
 target-version = "py310"

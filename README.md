@@ -1,6 +1,6 @@
 # AgentPatch
 
-Python SDK and CLI for the [AgentPatch](https://agentpatch.ai) tool marketplace.
+Zero-dependency Python SDK and CLI for the [AgentPatch](https://agentpatch.ai) tool marketplace. Single file, stdlib only.
 
 ## Install
 
@@ -13,6 +13,8 @@ Or with [pipx](https://pipx.pypa.io/) for CLI-only usage:
 ```bash
 pipx install agentpatch
 ```
+
+Or just copy `src/agentpatch.py` into your project — it has no dependencies beyond Python 3.10+.
 
 ## Authentication
 
