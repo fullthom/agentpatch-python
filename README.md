@@ -36,13 +36,13 @@ ap search "image generation"
 ap search --max-price 100 --json
 
 # Get tool details
-ap info agentpatch google-search
+ap info google-search
 
 # Invoke a tool (waits for result by default)
-ap run agentpatch google-search --input '{"query": "best pizza NYC"}'
+ap run google-search --input '{"query": "best pizza NYC"}'
 
 # Invoke without waiting (for async tools)
-ap run agentpatch generate-image-recraft --input '{"prompt": "a cat"}' --no-poll
+ap run generate-image-recraft --input '{"prompt": "a cat"}' --no-poll
 
 # Check async job status
 ap job job_abc123
@@ -53,7 +53,7 @@ Every command supports `--json` for scripting:
 
 ```bash
 ap search "email" --json | jq '.[0].slug'
-ap run agentpatch google-search --input '{"query": "test"}' --json | jq '.output'
+ap run google-search --input '{"query": "test"}' --json | jq '.output'
 ```
 
 ## SDK Usage
@@ -69,15 +69,15 @@ for t in tools["tools"]:
     print(f"{t['owner_username']}/{t['slug']} — {t['price_credits_per_call']} credits")
 
 # Get tool details
-tool = ap.get_tool("agentpatch", "google-search")
+tool = ap.get_tool("google-search")
 print(tool["input_schema"])
 
 # Invoke a tool (auto-polls async jobs)
-result = ap.invoke("agentpatch", "google-search", {"query": "best pizza NYC"})
+result = ap.invoke("google-search", {"query": "best pizza NYC"})
 print(result["output"])
 
 # Manual async control
-result = ap.invoke("agentpatch", "generate-image-recraft", {"prompt": "a cat"}, poll=False)
+result = ap.invoke("generate-image-recraft", {"prompt": "a cat"}, poll=False)
 job = ap.get_job(result["job_id"])
 ```
 

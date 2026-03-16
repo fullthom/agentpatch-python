@@ -144,7 +144,7 @@ class TestGetTool:
     def test_get_tool(self) -> None:
         with patch("agentpatch._request", return_value=(200, TOOL_DETAIL)):
             with AgentPatch(api_key="test_key") as ap:
-                tool = ap.get_tool("agentpatch", "google-search")
+                tool = ap.get_tool("google-search")
         assert tool["name"] == "Google Search"
         assert tool["default_timeout_seconds"] == 60
 
@@ -152,7 +152,7 @@ class TestGetTool:
         with patch("agentpatch._request", return_value=(404, {"error": "Tool not found"})):
             with AgentPatch(api_key="test_key") as ap:
                 with pytest.raises(AgentPatchError) as exc_info:
-                    ap.get_tool("nobody", "fake")
+                    ap.get_tool("fake", "nobody")
         assert exc_info.value.status_code == 404
 
 
@@ -160,7 +160,7 @@ class TestInvoke:
     def test_invoke_sync(self) -> None:
         with patch("agentpatch._request", return_value=(200, INVOKE_SUCCESS)):
             with AgentPatch(api_key="test_key") as ap:
-                result = ap.invoke("agentpatch", "google-search", {"query": "test"})
+                result = ap.invoke("google-search", {"query": "test"})
         assert result["status"] == "success"
         assert result["output"]["results"][0]["title"] == "Test"
 
@@ -176,28 +176,28 @@ class TestInvoke:
 
         with patch("agentpatch._request", side_effect=fake_request), patch("time.sleep"):
             with AgentPatch(api_key="test_key") as ap:
-                result = ap.invoke("agentpatch", "recraft", {"prompt": "a cat"}, poll_interval=0.01)
+                result = ap.invoke("recraft", {"prompt": "a cat"}, poll_interval=0.01)
         assert result["status"] == "success"
         assert result["output"]["image_url"] == "https://example.com/img.png"
 
     def test_invoke_no_poll(self) -> None:
         with patch("agentpatch._request", return_value=(202, INVOKE_PENDING)):
             with AgentPatch(api_key="test_key") as ap:
-                result = ap.invoke("agentpatch", "recraft", {"prompt": "a cat"}, poll=False)
+                result = ap.invoke("recraft", {"prompt": "a cat"}, poll=False)
         assert result["status"] == "pending"
         assert result["job_id"] == "job_456"
 
     def test_invoke_requires_auth(self) -> None:
         with AgentPatch() as ap:
             with pytest.raises(AgentPatchError, match="No API key"):
-                ap.invoke("agentpatch", "google-search", {"query": "test"})
+                ap.invoke("google-search", {"query": "test"})
 
     def test_invoke_error(self) -> None:
         error_body = {"error": "Insufficient credits", "required": 50, "balance": 10}
         with patch("agentpatch._request", return_value=(402, error_body)):
             with AgentPatch(api_key="test_key") as ap:
                 with pytest.raises(AgentPatchError) as exc_info:
-                    ap.invoke("agentpatch", "google-search", {"query": "test"})
+                    ap.invoke("google-search", {"query": "test"})
         assert exc_info.value.status_code == 402
         assert exc_info.value.body["balance"] == 10
 
@@ -238,7 +238,7 @@ class TestCLISearch:
 class TestCLIInfo:
     def test_info(self) -> None:
         with patch("agentpatch._request", return_value=(200, TOOL_DETAIL)):
-            output, code = _run_cli(["--api-key", "test", "info", "agentpatch", "google-search"])
+            output, code = _run_cli(["--api-key", "test", "info", "google-search"])
         assert code == 0
         assert "Google Search" in output
 
@@ -248,7 +248,7 @@ class TestCLIRun:
         with patch("agentpatch._request", return_value=(200, INVOKE_SUCCESS)):
             output, code = _run_cli([
                 "--api-key", "test",
-                "run", "agentpatch", "google-search",
+                "run", "google-search",
                 "--input", '{"query": "test"}',
             ])
         assert code == 0
@@ -258,7 +258,7 @@ class TestCLIRun:
         with patch("agentpatch._request", return_value=(200, INVOKE_SUCCESS)):
             output, code = _run_cli([
                 "--api-key", "test",
-                "run", "agentpatch", "google-search",
+                "run", "google-search",
                 "--input", '{"query": "test"}',
                 "--json",
             ])

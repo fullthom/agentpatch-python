@@ -162,15 +162,15 @@ class AgentPatch:
             params["max_price_credits"] = max_price_credits
         return self._get("/api/search", params=params)
 
-    def get_tool(self, username: str, slug: str) -> dict[str, Any]:
-        """Get detailed information about a specific tool."""
+    def get_tool(self, slug: str, username: str = "agentpatch") -> dict[str, Any]:
+        """Get detailed information about a specific tool. Username defaults to 'agentpatch'."""
         return self._get(f"/api/tools/{username}/{slug}")
 
     def invoke(
         self,
-        username: str,
         slug: str,
         input: dict[str, Any],
+        username: str = "agentpatch",
         *,
         timeout_seconds: int | None = None,
         poll: bool = True,
@@ -300,6 +300,14 @@ def _error(message: str) -> None:
     sys.exit(1)
 
 
+def _parse_tool_ref(ref: str) -> tuple[str, str]:
+    """Parse a tool reference like 'slug' or 'username/slug'. Returns (username, slug)."""
+    if "/" in ref:
+        parts = ref.split("/", 1)
+        return parts[0], parts[1]
+    return "agentpatch", ref
+
+
 # ---------------------------------------------------------------------------
 # CLI subcommands
 # ---------------------------------------------------------------------------
@@ -351,9 +359,10 @@ def _cmd_search(args: argparse.Namespace) -> None:
 
 def _cmd_info(args: argparse.Namespace) -> None:
     """Handle 'info' subcommand."""
+    username, slug = _parse_tool_ref(args.tool)
     client = AgentPatch(api_key=args.api_key, base_url=args.base_url)
     try:
-        tool = client.get_tool(args.username, args.slug)
+        tool = client.get_tool(slug, username)
     except AgentPatchError as e:
         _error(str(e))
 
@@ -363,9 +372,9 @@ def _cmd_info(args: argparse.Namespace) -> None:
 
     rate = tool.get("success_rate")
     rate_str = f"{rate * 100:.0f}%" if rate else "-"
-    print(f"\n{_bold(tool.get('name', args.slug))}")
+    print(f"\n{_bold(tool.get('name', slug))}")
     print(
-        f"by {tool.get('owner_username', args.username)} | "
+        f"by {tool.get('owner_username', username)} | "
         f"{tool.get('price_credits_per_call', '?')} credits/call | "
         f"{rate_str} success rate | "
         f"{tool.get('total_calls', 0) or 0} total calls\n"
@@ -380,6 +389,7 @@ def _cmd_info(args: argparse.Namespace) -> None:
 
 def _cmd_run(args: argparse.Namespace) -> None:
     """Handle 'run' subcommand."""
+    username, slug = _parse_tool_ref(args.tool)
     raw = args.input
     if raw.startswith("@"):
         filepath = raw[1:]
@@ -396,9 +406,9 @@ def _cmd_run(args: argparse.Namespace) -> None:
 
     try:
         result = client.invoke(
-            args.username,
-            args.slug,
+            slug,
             tool_input,
+            username=username,
             timeout_seconds=args.timeout,
             poll=not args.no_poll,
         )
@@ -540,15 +550,13 @@ def main(argv: list[str] | None = None) -> None:
 
     # info
     p_info = subparsers.add_parser("info", help="Get details about a specific tool (schema, pricing, stats).")
-    p_info.add_argument("username", help="Tool owner's username.")
-    p_info.add_argument("slug", help="Tool slug.")
+    p_info.add_argument("tool", help="Tool slug or username/slug (e.g. 'google-search' or 'agentpatch/google-search').")
     p_info.add_argument("--json", action="store_true", help="Output raw JSON.")
     p_info.set_defaults(func=_cmd_info)
 
     # run
     p_run = subparsers.add_parser("run", help="Invoke a tool and get results.")
-    p_run.add_argument("username", help="Tool owner's username.")
-    p_run.add_argument("slug", help="Tool slug.")
+    p_run.add_argument("tool", help="Tool slug or username/slug (e.g. 'google-search' or 'agentpatch/google-search').")
     p_run.add_argument("--input", required=True, help="Tool input as JSON string, or @path/to/file.json.")
     p_run.add_argument("--no-poll", action="store_true", help="Return immediately without waiting for async results.")
     p_run.add_argument("--timeout", type=int, default=None, help="Server-side timeout in seconds (1-3600).")
